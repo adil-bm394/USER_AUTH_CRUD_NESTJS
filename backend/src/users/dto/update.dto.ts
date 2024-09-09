@@ -10,4 +10,5 @@ export class UpdateDto {
   @IsNotEmpty()
   @IsString()
   readonly address: string;
+
 }

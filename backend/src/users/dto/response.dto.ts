@@ -17,7 +17,3 @@ export class LoginUserResponseDto extends BaseResponseDto {
     token?: string; 
   };
 }
-
-// export class UserUpdateResponseDto extends BaseResponseDto {
-//   user: User;
-// }

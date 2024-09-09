@@ -27,7 +27,7 @@ export class UsersService {
     const { email, password } = signUpDto;
 
     const existingUser = await this.userRepository.findOne({
-      where: { email },
+       where: { email } 
     });
 
     if (existingUser) {
@@ -148,7 +148,7 @@ export class UsersService {
         message: messages.USER_NOT_FOUND,
       };
     }
-    await this.userRepository.delete(id);
+    await this.userRepository.update(id, { deletedAt: new Date() });
     return {
       success: true,
       message: messages.USER_DELETED, 
