@@ -1,18 +1,23 @@
 // src/users/users.service.ts
 
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { User } from './users.entity';
 import { SignUpDto } from './dto/signup.dto';
 import * as bcrypt from 'bcrypt';
 import { messages } from 'src/utils/messages'; // Ensure this path is correct
 import { UpdateDto } from './dto/update.dto';
+import { LoginDto } from './dto/login.dto';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class UsersService {
   private userRepository;
 
-  constructor(private dataSource: DataSource) {
+  constructor(
+    private dataSource: DataSource,
+    private jwtService: JwtService,
+  ) {
     this.userRepository = this.dataSource.getRepository(User);
   }
 
@@ -36,6 +41,34 @@ export class UsersService {
     });
 
     return this.userRepository.save(user);
+  }
+
+  //LOGIN SERVICE
+  async login(loginDto: LoginDto) {
+    const { email, password } = loginDto;
+
+    const user = await this.userRepository.findOne({ where:{email }});
+
+    if (!user) {
+      throw new UnauthorizedException(messages.USER_NOT_FOUND);
+    }
+
+    const isMatchedPassword = await bcrypt.compare(password, user.password);
+    if (!isMatchedPassword) {
+      throw new UnauthorizedException(messages.INVALID_CREDENTIAL);
+    }
+
+    const token = this.jwtService.sign({ id: user._id });
+
+    return {
+      message: messages.USER_LOGIN,
+      user: {
+        id: user._id,
+        name: user.email,
+        email: user.email,
+        token,
+      },
+    };
   }
 
   // GET ALL USERS
