@@ -9,6 +9,7 @@ import { messages } from 'src/utils/messages'; // Ensure this path is correct
 import { UpdateDto } from './dto/update.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtService } from '@nestjs/jwt';
+import { UserResponseDto, LoginUserResponseDto, BaseResponseDto } from './dto/response.dto';
 
 @Injectable()
 export class UsersService {
@@ -22,7 +23,7 @@ export class UsersService {
   }
 
   // CREATE NEW USER
-  async create(signUpDto: SignUpDto): Promise<User> {
+  async create(signUpDto: SignUpDto): Promise<UserResponseDto> {
     const { email, password } = signUpDto;
 
     const existingUser = await this.userRepository.findOne({
@@ -40,14 +41,20 @@ export class UsersService {
       password: hashedPassword,
     });
 
-    return this.userRepository.save(user);
+    const savedUser = await this.userRepository.save(user);
+
+    return {
+      success: true,
+      message: messages.USER_CREATED,
+      user: savedUser,
+    };
   }
 
   //LOGIN SERVICE
-  async login(loginDto: LoginDto) {
+  async login(loginDto: LoginDto): Promise<LoginUserResponseDto> {
     const { email, password } = loginDto;
 
-    const user = await this.userRepository.findOne({ where:{email }});
+    const user = await this.userRepository.findOne({ where: { email } });
 
     if (!user) {
       throw new UnauthorizedException(messages.USER_NOT_FOUND);
@@ -61,9 +68,10 @@ export class UsersService {
     const token = this.jwtService.sign({ id: user._id });
 
     return {
+      success: true,
       message: messages.USER_LOGIN,
       user: {
-        id: user._id,
+        id: user.id,
         name: user.email,
         email: user.email,
         token,
@@ -72,25 +80,79 @@ export class UsersService {
   }
 
   // GET ALL USERS
-  async findAll(): Promise<User[]> {
-    return this.userRepository.find();
+  async findAll(): Promise<UserResponseDto> {
+    const users = await this.userRepository.find();
+    return {
+      success: true,
+      message: messages.USER_FETCHED,
+      user: users,
+    };
   }
 
   // GET USER BY ID
-  async findOne(id: number): Promise<User | null> {
-    return this.userRepository.findOne({
+  async findOne(id: number): Promise<UserResponseDto | BaseResponseDto> {
+    const user = await this.userRepository.findOne({
       where: { id },
     });
+
+    if (!user) {
+      return {
+        success: false,
+        message: messages.USER_NOT_FOUND,
+      };
+    }
+
+    return {
+      success: true,
+      message: messages.USER_FETCHED,
+      user: user,
+    };
   }
 
   // UPDATE USER
-  async update(id: number, updateDto: UpdateDto): Promise<void> {
+  async update(
+    id: number,
+    updateDto: UpdateDto,
+  ): Promise<UserResponseDto | BaseResponseDto> {
+    const user = await this.userRepository.findOne({
+      where: { id },
+    });
+
+    if (!user) {
+      return {
+        success: false,
+        message: messages.USER_NOT_FOUND,
+      };
+    }
     await this.userRepository.update(id, updateDto);
+
+    const updatedUser = await this.userRepository.findOne({
+      where: { id },
+    });
+    return {
+      success: true,
+      message: messages.USER_UPDATED,
+      user: updatedUser,
+    };
   }
 
   // DELETE USER
-  async delete(id: number): Promise<void> {
+  async delete(id: number): Promise<BaseResponseDto> {
+    const user = await this.userRepository.findOne({
+      where: { id },
+    });
+
+    if (!user) {
+      return {
+        success: false,
+        message: messages.USER_NOT_FOUND,
+      };
+    }
     await this.userRepository.delete(id);
+    return {
+      success: true,
+      message: messages.USER_DELETED, 
+    };
   }
 }
 
@@ -98,41 +160,3 @@ export class UsersService {
 
 
 
-//==================================================================
-// import { Injectable } from '@nestjs/common';
-// import { InjectRepository } from '@nestjs/typeorm';
-// import { UserRepository } from './user.repository';
-// import { User } from './users.entity';
-
-// @Injectable()
-// export class UsersService {
-//   constructor(
-//     @InjectRepository(UserRepository)
-//     private userRepository: UserRepository,
-//   ) {}
-
-//    //GET ALL USERS
-//   async findAll(): Promise<User[]> {
-//     return this.userRepository.find();
-//   }
-
-//   //GET USER BY ID
-//   async findOne(id: number): Promise<User> {
-//     return this.userRepository.findOne(id);
-//   }
-
-//   //CREATE NEW USER
-//   async create(user: User): Promise<User> {
-//     return this.userRepository.save(user);
-//   }
-
-//   //UPDATE USER
-//   async update(id: number, user: Partial<User>): Promise<void> {
-//     await this.userRepository.update(id, user);
-//   }
-
-//   //DELETE USER
-//   async delete(id: number): Promise<void> {
-//     await this.userRepository.delete(id);
-//   }
-// }

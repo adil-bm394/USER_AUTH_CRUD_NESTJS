@@ -5,7 +5,10 @@ export const messages = {
   USER_NOT_FOUND: 'User Not Found',
   INVALID_CREDENTIAL: 'Invalid credential',
   USER_NOT_AUTHORIZED: 'User Is Not Authorized',
-  USER_ID_REQUIRED: 'User ID is Required',
   GET_USER_DETAILS: 'Successfully Fetched User Details',
   INTERNAL_SERVER_ERROR: 'An internal server error occurred',
+  USER_CREATED: 'Successfully User created.',
+  USER_FETCHED: 'User successfully fetched.',
+  USER_UPDATED: 'User successfully updated.',
+  USER_DELETED: 'User successfully deleted.',
 };
