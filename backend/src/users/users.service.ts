@@ -3,7 +3,7 @@ import { DataSource } from 'typeorm';
 import { User } from './users.entity';
 import { SignUpDto } from './dto/signup.dto';
 import * as bcrypt from 'bcrypt';
-import { messages } from 'src/utils/messages'; // Ensure this path is correct
+import { messages } from 'src/utils/messages'; 
 import { UpdateDto } from './dto/update.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtService } from '@nestjs/jwt';
