@@ -1,14 +1,23 @@
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { User } from './users.entity';
+import { User } from './entities/users.entity';
 import { SignUpDto } from './dto/signup.dto';
 import * as bcrypt from 'bcrypt';
-import { messages } from 'src/utils/messages'; 
+import { messages } from 'src/utils/messages';
 import { UpdateDto } from './dto/update.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtService } from '@nestjs/jwt';
-import { UserResponseDto, LoginUserResponseDto, BaseResponseDto, UsersListResponseDto } from './dto/response.dto';
-import { UserRepository } from './user.repository';
+import {
+  UserResponseDto,
+  LoginUserResponseDto,
+  BaseResponseDto,
+  UsersListResponseDto,
+} from './dto/response.dto';
+import { UserRepository } from './repositories/user.repository';
 import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
@@ -82,8 +91,7 @@ export class UsersService {
     };
   }
 
-
-// GET USER BY ID
+  // GET USER BY ID
   async findOne(id: number): Promise<UserResponseDto | BaseResponseDto> {
     const user = await this.userRepository.findById(id);
 
@@ -101,7 +109,7 @@ export class UsersService {
     };
   }
 
-// UPDATE USER
+  // UPDATE USER
   async update(
     id: number,
     updateDto: UpdateDto,
@@ -114,7 +122,7 @@ export class UsersService {
         message: messages.USER_NOT_FOUND,
       };
     }
-    await this.userRepository.updateUser(id,updateDto);
+    await this.userRepository.updateUser(id, updateDto);
 
     const updatedUser = await this.userRepository.findById(id);
     return {
@@ -124,7 +132,7 @@ export class UsersService {
     };
   }
 
-// DELETE USER (SOFT DELETE)
+  // DELETE USER (SOFT DELETE)
   async delete(id: number): Promise<BaseResponseDto> {
     const user = await this.userRepository.findById(id);
     if (!user) {

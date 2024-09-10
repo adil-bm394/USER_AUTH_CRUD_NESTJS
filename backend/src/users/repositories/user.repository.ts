@@ -1,7 +1,7 @@
-import { DataSource,  Repository } from 'typeorm';
-import { User } from './users.entity';
-import { SignUpDto } from './dto/signup.dto';
-import { UpdateDto } from './dto/update.dto';
+import { DataSource, Repository } from 'typeorm';
+import { User } from '../entities/users.entity';
+import { SignUpDto } from '../dto/signup.dto';
+import { UpdateDto } from '../dto/update.dto';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
@@ -23,7 +23,7 @@ export class UserRepository extends Repository<User> {
     return this.save(user);
   }
 
-   async findAllUsers(): Promise<User[]> {
+  async findAllUsers(): Promise<User[]> {
     return this.find();
   }
 
@@ -35,4 +35,3 @@ export class UserRepository extends Repository<User> {
     await this.update(id, { deletedAt: new Date() });
   }
 }
-

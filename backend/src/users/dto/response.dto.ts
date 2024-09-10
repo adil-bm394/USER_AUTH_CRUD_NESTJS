@@ -1,12 +1,12 @@
-import { User } from "../users.entity";
+import { User } from '../entities/users.entity';
 
 export class BaseResponseDto {
-  success:boolean;
+  success: boolean;
   message: string;
 }
 
 export class UserResponseDto extends BaseResponseDto {
-  user:User;
+  user: User;
 }
 
 export class UsersListResponseDto extends BaseResponseDto {
@@ -17,6 +17,6 @@ export class LoginUserResponseDto extends BaseResponseDto {
     id: number;
     name: string;
     email: string;
-    token?: string; 
+    token?: string;
   };
 }

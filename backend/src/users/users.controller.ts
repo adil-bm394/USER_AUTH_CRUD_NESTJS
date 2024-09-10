@@ -8,7 +8,7 @@ import {
   Param,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { User } from './users.entity';
+import { User } from './entities/users.entity';
 import { SignUpDto } from './dto/signup.dto';
 import { UpdateDto } from './dto/update.dto';
 import { LoginDto } from './dto/login.dto';
