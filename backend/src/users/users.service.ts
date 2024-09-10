@@ -1,5 +1,3 @@
-// src/users/users.service.ts
-
 import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { User } from './users.entity';
@@ -9,26 +7,23 @@ import { messages } from 'src/utils/messages'; // Ensure this path is correct
 import { UpdateDto } from './dto/update.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtService } from '@nestjs/jwt';
-import { UserResponseDto, LoginUserResponseDto, BaseResponseDto } from './dto/response.dto';
+import { UserResponseDto, LoginUserResponseDto, BaseResponseDto, UsersListResponseDto } from './dto/response.dto';
+import { UserRepository } from './user.repository';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class UsersService {
-  private userRepository;
-
   constructor(
-    private dataSource: DataSource,
+    @InjectRepository(UserRepository)
+    private userRepository: UserRepository,
     private jwtService: JwtService,
-  ) {
-    this.userRepository = this.dataSource.getRepository(User);
-  }
+  ) {}
 
   // CREATE NEW USER
   async create(signUpDto: SignUpDto): Promise<UserResponseDto> {
     const { email, password } = signUpDto;
 
-    const existingUser = await this.userRepository.findOne({
-       where: { email } 
-    });
+    const existingUser = await this.userRepository.findByEmail(email);
 
     if (existingUser) {
       throw new ConflictException(messages.USER_ALREADY_EXIST);
@@ -36,12 +31,10 @@ export class UsersService {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = this.userRepository.create({
+    const savedUser = await this.userRepository.createUser({
       ...signUpDto,
       password: hashedPassword,
     });
-
-    const savedUser = await this.userRepository.save(user);
 
     return {
       success: true,
@@ -54,7 +47,7 @@ export class UsersService {
   async login(loginDto: LoginDto): Promise<LoginUserResponseDto> {
     const { email, password } = loginDto;
 
-    const user = await this.userRepository.findOne({ where: { email } });
+    const user = await this.userRepository.findByEmail(email);
 
     if (!user) {
       throw new UnauthorizedException(messages.USER_NOT_FOUND);
@@ -65,7 +58,7 @@ export class UsersService {
       throw new UnauthorizedException(messages.INVALID_CREDENTIAL);
     }
 
-    const token = this.jwtService.sign({ id: user._id });
+    const token = this.jwtService.sign({ id: user.id });
 
     return {
       success: true,
@@ -80,20 +73,19 @@ export class UsersService {
   }
 
   // GET ALL USERS
-  async findAll(): Promise<UserResponseDto> {
-    const users = await this.userRepository.find();
+  async findAll(): Promise<UsersListResponseDto> {
+    const users = await this.userRepository.findAllUsers();
     return {
       success: true,
       message: messages.USER_FETCHED,
-      user: users,
+      users,
     };
   }
 
-  // GET USER BY ID
+
+// GET USER BY ID
   async findOne(id: number): Promise<UserResponseDto | BaseResponseDto> {
-    const user = await this.userRepository.findOne({
-      where: { id },
-    });
+    const user = await this.userRepository.findById(id);
 
     if (!user) {
       return {
@@ -109,14 +101,12 @@ export class UsersService {
     };
   }
 
-  // UPDATE USER
+// UPDATE USER
   async update(
     id: number,
     updateDto: UpdateDto,
   ): Promise<UserResponseDto | BaseResponseDto> {
-    const user = await this.userRepository.findOne({
-      where: { id },
-    });
+    const user = await this.userRepository.findById(id);
 
     if (!user) {
       return {
@@ -124,11 +114,9 @@ export class UsersService {
         message: messages.USER_NOT_FOUND,
       };
     }
-    await this.userRepository.update(id, updateDto);
+    await this.userRepository.updateUser(id,updateDto);
 
-    const updatedUser = await this.userRepository.findOne({
-      where: { id },
-    });
+    const updatedUser = await this.userRepository.findById(id);
     return {
       success: true,
       message: messages.USER_UPDATED,
@@ -136,27 +124,19 @@ export class UsersService {
     };
   }
 
-  // DELETE USER
+// DELETE USER (SOFT DELETE)
   async delete(id: number): Promise<BaseResponseDto> {
-    const user = await this.userRepository.findOne({
-      where: { id },
-    });
-
+    const user = await this.userRepository.findById(id);
     if (!user) {
       return {
         success: false,
         message: messages.USER_NOT_FOUND,
       };
     }
-    await this.userRepository.update(id, { deletedAt: new Date() });
+    await this.userRepository.softDeleteUser(id);
     return {
       success: true,
-      message: messages.USER_DELETED, 
+      message: messages.USER_DELETED,
     };
   }
 }
-
-
-
-
-

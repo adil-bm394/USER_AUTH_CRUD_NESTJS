@@ -12,8 +12,12 @@ import { User } from './users.entity';
 import { SignUpDto } from './dto/signup.dto';
 import { UpdateDto } from './dto/update.dto';
 import { LoginDto } from './dto/login.dto';
-import { UserResponseDto, LoginUserResponseDto, BaseResponseDto } from './dto/response.dto';
-
+import {
+  UserResponseDto,
+  LoginUserResponseDto,
+  BaseResponseDto,
+  UsersListResponseDto,
+} from './dto/response.dto';
 
 @Controller('users')
 export class UsersController {
@@ -33,11 +37,11 @@ export class UsersController {
 
   //GET ALL USER
   @Get()
-  findAll(): Promise<UserResponseDto> {
+  findAll(): Promise<UsersListResponseDto> {
     return this.usersService.findAll();
   }
 
-  //GET USER BY ID
+  //   //GET USER BY ID
   @Get(':id')
   findOne(@Param('id') id: number): Promise<UserResponseDto | BaseResponseDto> {
     return this.usersService.findOne(id);
@@ -49,12 +53,12 @@ export class UsersController {
     @Param('id') id: number,
     @Body() updateDto: UpdateDto,
   ): Promise<UserResponseDto | BaseResponseDto> {
-    return  this.usersService.update(id, updateDto);
+    return this.usersService.update(id, updateDto);
   }
 
   //DELETE USER
   @Delete(':id')
-  remove(@Param('id') id: number):Promise<BaseResponseDto> {
+  remove(@Param('id') id: number): Promise<BaseResponseDto> {
     return this.usersService.delete(id);
   }
 }
