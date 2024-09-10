@@ -8,18 +8,13 @@ import { DataSource } from 'typeorm';
 import { User } from './entities/users.entity';
 import { SignUpDto } from './dto/signup.dto';
 import * as bcrypt from 'bcrypt';
-import { messages } from '../utils/messages';
+import { messages } from '../utils/messages/messages';
 import { UpdateDto } from './dto/update.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtService } from '@nestjs/jwt';
-import {
-  UserResponseDto,
-  LoginUserResponseDto,
-  BaseResponseDto,
-  UsersListResponseDto,
-} from './dto/response.dto';
 import { UserRepository } from './repositories/user.repository';
 import { InjectRepository } from '@nestjs/typeorm';
+import { BaseResponse, LoginUserResponse, UserResponse, UsersListResponse } from 'src/utils/interface/types';
 
 @Injectable()
 export class UsersService {
@@ -30,7 +25,7 @@ export class UsersService {
   ) {}
 
   // CREATE NEW USER
-  async create(signUpDto: SignUpDto): Promise<UserResponseDto> {
+  async create(signUpDto: SignUpDto): Promise<UserResponse> {
     try {
       const { email, password } = signUpDto;
 
@@ -46,13 +41,14 @@ export class UsersService {
         password: hashedPassword,
       });
 
+      savedUser.password = undefined;
       return {
         success: true,
         message: messages.USER_CREATED,
         user: savedUser,
       };
     } catch (error) {
-      console.error(`[Users.Service]Error creating user:${error}`);
+      console.error(`[Users.Service]Error creating user:${error.message}||${error}`);
       if (error instanceof ConflictException) {
         throw error;
       } else {
@@ -62,7 +58,7 @@ export class UsersService {
   }
 
   //LOGIN SERVICE
-  async login(loginDto: LoginDto): Promise<LoginUserResponseDto> {
+  async login(loginDto: LoginDto): Promise<LoginUserResponse> {
     try {
       const { email, password } = loginDto;
 
@@ -99,9 +95,14 @@ export class UsersService {
   }
 
   // GET ALL USERS
-  async findAll(): Promise<UsersListResponseDto> {
+  async findAll(): Promise<UsersListResponse> {
     try {
       const users = await this.userRepository.findAllUsers();
+
+       users.forEach((user) => {
+         user.password = undefined;
+       });
+
       return {
         success: true,
         message: messages.USER_FETCHED,
@@ -114,7 +115,7 @@ export class UsersService {
   }
 
   // GET USER BY ID
-  async findOne(id: number): Promise<UserResponseDto | BaseResponseDto> {
+  async findOne(id: number): Promise<UserResponse | BaseResponse> {
     try {
       const user = await this.userRepository.findById(id);
 
@@ -124,6 +125,7 @@ export class UsersService {
           message: messages.USER_NOT_FOUND,
         };
       }
+      user.password=undefined;
       return {
         success: true,
         message: messages.USER_FETCHED,
@@ -139,7 +141,7 @@ export class UsersService {
   async update(
     id: number,
     updateDto: UpdateDto,
-  ): Promise<UserResponseDto | BaseResponseDto> {
+  ): Promise<UserResponse | BaseResponse> {
     try {
       const user = await this.userRepository.findById(id);
 
@@ -152,6 +154,7 @@ export class UsersService {
       await this.userRepository.updateUser(id, updateDto);
 
       const updatedUser = await this.userRepository.findById(id);
+      updatedUser.password=undefined;
       return {
         success: true,
         message: messages.USER_UPDATED,
@@ -164,7 +167,7 @@ export class UsersService {
   }
 
   // DELETE USER (SOFT DELETE)
-  async delete(id: number): Promise<BaseResponseDto> {
+  async delete(id: number): Promise<BaseResponse> {
     try {
       const user = await this.userRepository.findById(id);
       if (!user) {

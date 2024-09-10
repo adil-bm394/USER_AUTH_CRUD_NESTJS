@@ -13,11 +13,11 @@ import { SignUpDto } from './dto/signup.dto';
 import { UpdateDto } from './dto/update.dto';
 import { LoginDto } from './dto/login.dto';
 import {
-  UserResponseDto,
-  LoginUserResponseDto,
-  BaseResponseDto,
-  UsersListResponseDto,
-} from './dto/response.dto';
+  BaseResponse,
+  LoginUserResponse,
+  UserResponse,
+  UsersListResponse,
+} from 'src/utils/interface/types';
 
 @Controller('users')
 export class UsersController {
@@ -25,25 +25,25 @@ export class UsersController {
 
   // CREATE USER
   @Post()
-  async create(@Body() signUpDto: SignUpDto): Promise<UserResponseDto> {
+  async create(@Body() signUpDto: SignUpDto): Promise<UserResponse> {
     return this.usersService.create(signUpDto);
   }
 
   //LOGIN USER
   @Post('/login')
-  async login(@Body() loginDto: LoginDto): Promise<LoginUserResponseDto> {
+  async login(@Body() loginDto: LoginDto): Promise<LoginUserResponse> {
     return this.usersService.login(loginDto);
   }
 
   //GET ALL USER
   @Get()
-  findAll(): Promise<UsersListResponseDto> {
+  findAll(): Promise<UsersListResponse> {
     return this.usersService.findAll();
   }
 
   //   //GET USER BY ID
   @Get(':id')
-  findOne(@Param('id') id: number): Promise<UserResponseDto | BaseResponseDto> {
+  findOne(@Param('id') id: number): Promise<UserResponse | BaseResponse> {
     return this.usersService.findOne(id);
   }
 
@@ -52,13 +52,13 @@ export class UsersController {
   async update(
     @Param('id') id: number,
     @Body() updateDto: UpdateDto,
-  ): Promise<UserResponseDto | BaseResponseDto> {
+  ): Promise<UserResponse | BaseResponse> {
     return this.usersService.update(id, updateDto);
   }
 
   //DELETE USER
   @Delete(':id')
-  remove(@Param('id') id: number): Promise<BaseResponseDto> {
+  remove(@Param('id') id: number): Promise<BaseResponse> {
     return this.usersService.delete(id);
   }
 }
