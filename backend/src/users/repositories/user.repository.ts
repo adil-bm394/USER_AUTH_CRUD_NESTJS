@@ -1,6 +1,6 @@
 import { DataSource, Repository } from 'typeorm';
 import { User } from '../entities/users.entity';
-import { SignUpDto } from '../dto/signup.dto';
+import { SignUpDto } from '../../auth/dto/signup.dto';
 import { UpdateDto } from '../dto/update.dto';
 import { Injectable } from '@nestjs/common';
 

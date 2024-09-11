@@ -1,4 +1,4 @@
-import { User } from "src/users/entities/users.entity";
+import { User } from 'src/users/entities/users.entity';
 
 export interface BaseResponse {
   success: boolean;
@@ -20,4 +20,13 @@ export interface LoginUserResponse extends BaseResponse {
     email: string;
     token?: string;
   };
+}
+
+declare global {
+  namespace Express {
+    interface Request {
+      user?: User; 
+      
+    }
+  }
 }

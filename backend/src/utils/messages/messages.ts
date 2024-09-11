@@ -11,4 +11,6 @@ export const messages = {
   USER_FETCHED: 'User successfully fetched.',
   USER_UPDATED: 'User successfully updated.',
   USER_DELETED: 'User successfully deleted.',
+  TOKEN_MISSING: 'Token Is Missing',
+  INVALID_TOKEN:'Invalid Token',
 };

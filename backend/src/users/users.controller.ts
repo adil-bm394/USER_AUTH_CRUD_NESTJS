@@ -9,33 +9,34 @@ import {
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { User } from './entities/users.entity';
-import { SignUpDto } from './dto/signup.dto';
+import { SignUpDto } from '../auth/dto/signup.dto';
 import { UpdateDto } from './dto/update.dto';
-import { LoginDto } from './dto/login.dto';
+import { LoginDto } from '../auth/dto/login.dto';
 import {
   BaseResponse,
   LoginUserResponse,
   UserResponse,
   UsersListResponse,
-} from 'src/utils/interface/types';
+} from 'src/utils/interfaces/types';
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  // CREATE USER
-  @Post()
-  async create(@Body() signUpDto: SignUpDto): Promise<UserResponse> {
-    return this.usersService.create(signUpDto);
-  }
+  // // CREATE USER
+  // @Post()
+  // async create(@Body() signUpDto: SignUpDto): Promise<UserResponse> {
+  //   return this.usersService.create(signUpDto);
+  // }
 
-  //LOGIN USER
-  @Post('/login')
-  async login(@Body() loginDto: LoginDto): Promise<LoginUserResponse> {
-    return this.usersService.login(loginDto);
-  }
+  // //LOGIN USER
+  // @Post('/login')
+  // async login(@Body() loginDto: LoginDto): Promise<LoginUserResponse> {
+  //   return this.usersService.login(loginDto);
+  // }
 
   //GET ALL USER
+
   @Get()
   findAll(): Promise<UsersListResponse> {
     return this.usersService.findAll();

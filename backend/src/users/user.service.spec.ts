@@ -1,26 +1,16 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { getRepositoryToken } from '@nestjs/typeorm';
 import { UsersService } from './users.service';
 import { UserRepository } from './repositories/user.repository';
-import { JwtService } from '@nestjs/jwt';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { InternalServerErrorException } from '@nestjs/common';
 import { messages } from '../utils/messages/messages';
+import { UpdateDto } from './dto/update.dto';
 
 const mockUserRepository = {
-  find: jest.fn(),
-  create: jest.fn(),
-  save: jest.fn(),
-  findOne: jest.fn(),
-  update: jest.fn(),
-  delete: jest.fn(),
-  findByEmail: jest.fn().mockResolvedValue(null), 
-  createUser: jest.fn(),
   findAllUsers: jest.fn(),
+  findById: jest.fn(),
   updateUser: jest.fn(),
   softDeleteUser: jest.fn(),
-};
-
-const mockJwtService = {
-  sign: jest.fn().mockReturnValue('mock-token'),
 };
 
 describe('UsersService', () => {
@@ -34,10 +24,6 @@ describe('UsersService', () => {
           provide: getRepositoryToken(UserRepository),
           useValue: mockUserRepository,
         },
-        {
-          provide: JwtService,
-          useValue: mockJwtService,
-        },
       ],
     }).compile();
 
@@ -48,23 +34,109 @@ describe('UsersService', () => {
     expect(service).toBeDefined();
   });
 
-  it('should create a user', async () => {
-    const userDto = {
-      name: 'Mohd Adil',
-      email: 'adil@binmile.com',
-      password: '123456',
-      address: 'Azamgarh',
+  it('should find all users', async () => {
+    const users = [
+      { id: 1, email: 'adil@binmile.com', password: '123456' },
+      { id: 2, email: 'faheem@binmile.com', password: '123456' },
+    ];
+
+    mockUserRepository.findAllUsers.mockResolvedValue(users);
+
+    expect(await service.findAll()).toEqual({
+      success: true,
+      message: messages.USER_FETCHED,
+      users: [
+        { id: 1, email: 'adil@binmile.com' },
+        { id: 2, email: 'faheem@binmile.com' },
+      ],
+    });
+  });
+
+  it('should find a user by ID', async () => {
+    const user = {
+      id: 1,
     };
 
-    const user = { ...userDto, id: 1 };
+    mockUserRepository.findById.mockResolvedValue(user);
 
-    mockUserRepository.findByEmail.mockResolvedValue(null); 
-    mockUserRepository.createUser.mockResolvedValue(user);
-
-    expect(await service.create(userDto)).toEqual({
+    expect(await service.findOne(1)).toEqual({
       success: true,
-      message:messages.USER_CREATED, 
-      user,
+      message: messages.USER_FETCHED,
+      user: { id: 1 },
     });
+  });
+
+  it('should return USER_NOT_FOUND when user is not found by ID', async () => {
+    mockUserRepository.findById.mockResolvedValue(null);
+
+    expect(await service.findOne(1)).toEqual({
+      success: false,
+      message: messages.USER_NOT_FOUND,
+    });
+  });
+
+  it('should update a user', async () => {
+    const updateDto: UpdateDto = {
+      name: 'Mohd Adil',
+      address: 'Noida',
+    };
+    const user = {
+      id: 1,
+    };
+
+    mockUserRepository.findById.mockResolvedValue(user);
+    mockUserRepository.updateUser.mockResolvedValue(undefined);
+    mockUserRepository.findById.mockResolvedValue({ ...user, ...updateDto });
+
+    expect(await service.update(1, updateDto)).toEqual({
+      success: true,
+      message: messages.USER_UPDATED,
+      user: { id: 1, name: 'Mohd Adil', address: 'Noida' },
+    });
+  });
+
+  it('should return USER_NOT_FOUND when user is not found for update', async () => {
+    const updateDto: UpdateDto = {
+      name: 'Mohd Adil',
+      address: 'Noida',
+    };
+
+    mockUserRepository.findById.mockResolvedValue(null);
+
+    expect(await service.update(1, updateDto)).toEqual({
+      success: false,
+      message: messages.USER_NOT_FOUND,
+    });
+  });
+
+  it('should delete a user', async () => {
+    const user = { id: 2, email: 'faheem@binmile.com' };
+
+    mockUserRepository.findById.mockResolvedValue(user);
+    mockUserRepository.softDeleteUser.mockResolvedValue(undefined);
+
+    expect(await service.delete(1)).toEqual({
+      success: true,
+      message: messages.USER_DELETED,
+    });
+  });
+
+  it('should return USER_NOT_FOUND when user is not found for delete', async () => {
+    mockUserRepository.findById.mockResolvedValue(null);
+
+    expect(await service.delete(1)).toEqual({
+      success: false,
+      message: messages.USER_NOT_FOUND,
+    });
+  });
+
+  it('should handle errors during user operations', async () => {
+    mockUserRepository.findAllUsers.mockRejectedValue(
+      new Error('Database error'),
+    );
+
+    await expect(service.findAll()).rejects.toThrow(
+      InternalServerErrorException,
+    );
   });
 });
