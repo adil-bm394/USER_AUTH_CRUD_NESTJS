@@ -23,20 +23,7 @@ import {
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  // // CREATE USER
-  // @Post()
-  // async create(@Body() signUpDto: SignUpDto): Promise<UserResponse> {
-  //   return this.usersService.create(signUpDto);
-  // }
-
-  // //LOGIN USER
-  // @Post('/login')
-  // async login(@Body() loginDto: LoginDto): Promise<LoginUserResponse> {
-  //   return this.usersService.login(loginDto);
-  // }
-
   //GET ALL USER
-
   @Get()
   findAll(): Promise<UsersListResponse> {
     return this.usersService.findAll();
