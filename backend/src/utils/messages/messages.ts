@@ -12,5 +12,8 @@ export const messages = {
   USER_UPDATED: 'User successfully updated.',
   USER_DELETED: 'User successfully deleted.',
   TOKEN_MISSING: 'Token Is Missing',
-  INVALID_TOKEN:'Invalid Token',
+  INVALID_TOKEN: 'Invalid Token',
+  DELETE_NOT_ALLOWED: 'You are not allowed to Delete this user',
+  UPDATE_NOT_ALLOWED: 'You are not allowed to Update this user',
+  ACCESS_NOT_ALLOWED: 'You are not allowed to Access this user',
 };

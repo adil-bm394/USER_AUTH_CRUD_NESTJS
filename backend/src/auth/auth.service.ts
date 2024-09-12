@@ -6,13 +6,14 @@ import {
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
-import { UsersService } from '../users/users.service';
 import { SignUpDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
 import { messages } from '../utils/messages/messages';
-import { LoginUserResponse, UserResponse } from 'src/utils/interfaces/types';
+import { BaseResponse, ErrorResponse, LoginUserResponse, UserResponse } from '../utils/interfaces/types';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserRepository } from '../users/repositories/user.repository';
+import { statusCodes } from '../utils/statusCodes/statusCodes';
+
 
 @Injectable()
 export class AuthService {
@@ -23,24 +24,29 @@ export class AuthService {
   ) {}
 
   //CREATE USER
-  async create(signUpDto: SignUpDto): Promise<UserResponse> {
+  async create(userData: SignUpDto): Promise<UserResponse | BaseResponse |ErrorResponse> {
     try {
-      const { email, password } = signUpDto;
+      const { email, password } = userData;
 
       const existingUser = await this.userRepository.findByEmail(email);
       if (existingUser) {
-        throw new ConflictException(messages.USER_ALREADY_EXIST);
+        return {
+          status:statusCodes.BAD_REQUEST,
+          success: false,
+          message: messages.USER_ALREADY_EXIST,
+        };
       }
 
       const hashedPassword = await bcrypt.hash(password, 10);
 
       const savedUser = await this.userRepository.createUser({
-        ...signUpDto,
+        ...userData,
         password: hashedPassword,
       });
       savedUser.password = undefined;
 
       return {
+        status:statusCodes.CREATED,
         success: true,
         message: messages.USER_CREATED,
         user: savedUser,
@@ -49,48 +55,59 @@ export class AuthService {
       console.log(
         `[Auth.Service] Error creating user: ${error.message} || ${error}`,
       );
-      if (error instanceof ConflictException) {
-        throw error;
-      } else {
-        throw new InternalServerErrorException(messages.INTERNAL_SERVER_ERROR);
+      return {
+              status:statusCodes.INTERNAL_SERVER_ERROR,
+               success: false,
+               message:messages.INTERNAL_SERVER_ERROR,
+               error:error.message,
       }
     }
   }
 
   //LOGIN SERVICE
-  async login(loginDto: LoginDto): Promise<LoginUserResponse> {
+  async login(userData: LoginDto): Promise< BaseResponse|LoginUserResponse |ErrorResponse> {
     try {
-      const { email, password } = loginDto;
+      const { email, password } = userData;
 
       const user = await this.userRepository.findByEmail(email);
       if (!user) {
-        throw new UnauthorizedException(messages.USER_NOT_FOUND);
+        return {
+          status:statusCodes.NOT_FOUND,
+          success: false,
+          message: messages.USER_NOT_FOUND,
+        };
       }
 
       const isMatchedPassword = await bcrypt.compare(password, user.password);
       if (!isMatchedPassword) {
-        throw new UnauthorizedException(messages.INVALID_CREDENTIAL);
+        return {
+          status:statusCodes.UNAUTHORIZED,
+          success: false,
+          message: messages.INVALID_CREDENTIAL,
+        };
       }
 
       const token = this.jwtService.sign({ id: user.id });
 
       return {
+        status:statusCodes.OK,
         success: true,
         message: messages.USER_LOGIN,
         user: {
           id: user.id,
-          name: user.email,
+          name: user.name,
           email: user.email,
           token,
         },
       };
     } catch (error) {
       console.log(`[Auth.Service] Error during login: ${error}`);
-      if (error instanceof UnauthorizedException) {
-        throw error;
-      } else {
-        throw new InternalServerErrorException(messages.INTERNAL_SERVER_ERROR);
-      }
+      return {
+        status: statusCodes.INTERNAL_SERVER_ERROR,
+        success: false,
+        message: messages.INTERNAL_SERVER_ERROR,
+        error: error.message,
+      };
     }
   }
 }

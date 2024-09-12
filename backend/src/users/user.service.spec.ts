@@ -43,6 +43,7 @@ describe('UsersService', () => {
     mockUserRepository.findAllUsers.mockResolvedValue(users);
 
     expect(await service.findAll()).toEqual({
+      status: 200,
       success: true,
       message: messages.USER_FETCHED,
       users: [
@@ -59,7 +60,8 @@ describe('UsersService', () => {
 
     mockUserRepository.findById.mockResolvedValue(user);
 
-    expect(await service.findOne(1)).toEqual({
+    expect(await service.findOne(1, 1)).toEqual({
+      status: 200,
       success: true,
       message: messages.USER_FETCHED,
       user: { id: 1 },
@@ -69,9 +71,24 @@ describe('UsersService', () => {
   it('should return USER_NOT_FOUND when user is not found by ID', async () => {
     mockUserRepository.findById.mockResolvedValue(null);
 
-    expect(await service.findOne(1)).toEqual({
+    expect(await service.findOne(1, 1)).toEqual({
+      status: 404,
       success: false,
       message: messages.USER_NOT_FOUND,
+    });
+  });
+
+  it('should return ACCESS_NOT_ALLOWED if user access is unauthorized', async () => {
+    const user = {
+      id: 2, // Different user ID
+    };
+
+    mockUserRepository.findById.mockResolvedValue(user);
+
+    expect(await service.findOne(1, 1)).toEqual({
+      status: 401,
+      success: false,
+      message: messages.ACCESS_NOT_ALLOWED,
     });
   });
 
@@ -88,7 +105,8 @@ describe('UsersService', () => {
     mockUserRepository.updateUser.mockResolvedValue(undefined);
     mockUserRepository.findById.mockResolvedValue({ ...user, ...updateDto });
 
-    expect(await service.update(1, updateDto)).toEqual({
+    expect(await service.update(1, updateDto, 1)).toEqual({
+      status: 200,
       success: true,
       message: messages.USER_UPDATED,
       user: { id: 1, name: 'Mohd Adil', address: 'Noida' },
@@ -103,19 +121,39 @@ describe('UsersService', () => {
 
     mockUserRepository.findById.mockResolvedValue(null);
 
-    expect(await service.update(1, updateDto)).toEqual({
+    expect(await service.update(1, updateDto, 1)).toEqual({
+      status: 404,
       success: false,
       message: messages.USER_NOT_FOUND,
     });
   });
 
+  it('should return UPDATE_NOT_ALLOWED if user access is unauthorized for update', async () => {
+    const updateDto: UpdateDto = {
+      name: 'Mohd Adil',
+      address: 'Noida',
+    };
+    const user = {
+      id: 2, // Different user ID
+    };
+
+    mockUserRepository.findById.mockResolvedValue(user);
+
+    expect(await service.update(1, updateDto, 1)).toEqual({
+      status: 401,
+      success: false,
+      message: messages.UPDATE_NOT_ALLOWED,
+    });
+  });
+
   it('should delete a user', async () => {
-    const user = { id: 2, email: 'faheem@binmile.com' };
+    const user = { id: 1, email: 'faheem@binmile.com' };
 
     mockUserRepository.findById.mockResolvedValue(user);
     mockUserRepository.softDeleteUser.mockResolvedValue(undefined);
 
-    expect(await service.delete(1)).toEqual({
+    expect(await service.delete(1, 1)).toEqual({
+      status: 200,
       success: true,
       message: messages.USER_DELETED,
     });
@@ -124,9 +162,22 @@ describe('UsersService', () => {
   it('should return USER_NOT_FOUND when user is not found for delete', async () => {
     mockUserRepository.findById.mockResolvedValue(null);
 
-    expect(await service.delete(1)).toEqual({
+    expect(await service.delete(1, 1)).toEqual({
+      status: 404,
       success: false,
       message: messages.USER_NOT_FOUND,
+    });
+  });
+
+  it('should return DELETE_NOT_ALLOWED if user access is unauthorized for delete', async () => {
+    const user = { id: 2, email: 'faheem@binmile.com' };
+
+    mockUserRepository.findById.mockResolvedValue(user);
+
+    expect(await service.delete(1, 1)).toEqual({
+      status: 401,
+      success: false,
+      message: messages.DELETE_NOT_ALLOWED,
     });
   });
 
@@ -135,8 +186,12 @@ describe('UsersService', () => {
       new Error('Database error'),
     );
 
-    await expect(service.findAll()).rejects.toThrow(
-      InternalServerErrorException,
-    );
+    const result = await service.findAll();
+    expect(result).toEqual({
+      error: 'Database error',
+      message: messages.INTERNAL_SERVER_ERROR,
+      status: 500,
+      success: false,
+    });
   });
 });

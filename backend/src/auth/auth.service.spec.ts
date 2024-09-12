@@ -60,13 +60,14 @@ describe('AuthService', () => {
     mockUserRepository.createUser.mockResolvedValue(user);
 
     expect(await service.create(signUpDto)).toEqual({
+      status: 201,
       success: true,
       message: messages.USER_CREATED,
-      user,
+      user: { ...user, password: undefined },
     });
   });
 
-  it('should throw ConflictException if user already exists', async () => {
+  it('should return ConflictException if user already exists', async () => {
     const signUpDto = {
       name: 'Mohd Adil',
       email: 'adil@binmile.com',
@@ -76,10 +77,15 @@ describe('AuthService', () => {
 
     mockUserRepository.findByEmail.mockResolvedValue(signUpDto);
 
-    await expect(service.create(signUpDto)).rejects.toThrow(ConflictException);
+    const result = await service.create(signUpDto);
+    expect(result).toEqual({
+      message: messages.USER_ALREADY_EXIST,
+      status: 400,
+      success: false,
+    });
   });
 
-  it('should throw InternalServerErrorException on creation error', async () => {
+  it('should return InternalServerErrorException on creation error', async () => {
     const signUpDto = {
       name: 'Mohd Adil',
       email: 'adil@binmile.com',
@@ -92,9 +98,13 @@ describe('AuthService', () => {
       new Error('Database error'),
     );
 
-    await expect(service.create(signUpDto)).rejects.toThrow(
-      InternalServerErrorException,
-    );
+    const result = await service.create(signUpDto);
+    expect(result).toEqual({
+      error: 'Database error',
+      message: messages.INTERNAL_SERVER_ERROR,
+      status: 500,
+      success: false,
+    });
   });
 
   it('should login a user', async () => {
@@ -106,27 +116,27 @@ describe('AuthService', () => {
     const user = {
       id: 1,
       email: 'adil@binmile.com',
+      name: 'Mohd Adil',
       password: 'hashed-password',
     };
 
     jest.spyOn(bcrypt, 'compare').mockResolvedValue(true);
     mockUserRepository.findByEmail.mockResolvedValue(user);
 
-    const result = await service.login(loginDto);
-
-    expect(result).toEqual({
+    expect(await service.login(loginDto)).toEqual({
+      status: 200,
       success: true,
       message: messages.USER_LOGIN,
       user: {
         id: user.id,
-        name: user.email,
+        name: user.name,
         email: user.email,
         token: 'mock-token',
       },
     });
   });
 
-  it('should throw UnauthorizedException on invalid credentials', async () => {
+  it('should return UnauthorizedException on invalid credentials', async () => {
     const loginDto = {
       email: 'adil@binmile.com',
       password: 'wrongpassword',
@@ -141,12 +151,15 @@ describe('AuthService', () => {
     jest.spyOn(bcrypt, 'compare').mockResolvedValue(false);
     mockUserRepository.findByEmail.mockResolvedValue(user);
 
-    await expect(service.login(loginDto)).rejects.toThrow(
-      UnauthorizedException,
-    );
+    const result = await service.login(loginDto);
+    expect(result).toEqual({
+      message: messages.INVALID_CREDENTIAL,
+      status: 401,
+      success: false,
+    });
   });
 
-  it('should throw UnauthorizedException if user not found', async () => {
+  it('should return UnauthorizedException if user not found', async () => {
     const loginDto = {
       email: 'nonexistent@binmile.com',
       password: '123456',
@@ -154,12 +167,15 @@ describe('AuthService', () => {
 
     mockUserRepository.findByEmail.mockResolvedValue(null);
 
-    await expect(service.login(loginDto)).rejects.toThrow(
-      UnauthorizedException,
-    );
+    const result = await service.login(loginDto);
+    expect(result).toEqual({
+      message: messages.USER_NOT_FOUND,
+      status: 404,
+      success: false,
+    });
   });
 
-  it('should throw InternalServerErrorException on login error', async () => {
+  it('should return InternalServerErrorException on login error', async () => {
     const loginDto = {
       email: 'adil@binmile.com',
       password: '123456',
@@ -169,8 +185,12 @@ describe('AuthService', () => {
       new Error('Database error'),
     );
 
-    await expect(service.login(loginDto)).rejects.toThrow(
-      InternalServerErrorException,
-    );
+    const result = await service.login(loginDto);
+    expect(result).toEqual({
+      error: 'Database error',
+      message: messages.INTERNAL_SERVER_ERROR,
+      status: 500,
+      success: false,
+    });
   });
 });
